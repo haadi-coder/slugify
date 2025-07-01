@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -12,42 +13,68 @@ var alphabet = map[rune]string{'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д':
 	'й': "y", 'к': "k", 'л': "l", 'м': "m", 'н': "n",
 	'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t",
 	'у': "u", 'ф': "f", 'х': "h", 'ц': "ts", 'ч': "ch",
-	'ш': "sh", 'щ': "shch", 'ъ': "", 'ы': "y", 'ь': "",
+	'ш': "sh", 'щ': "shch", 'ы': "y",
 	'э': "e", 'ю': "yu", 'я': "ya"}
 
 func main() {
-	output := Make("")
+	output := Make("---Hello World---")
 	fmt.Println(output)
 }
 
 func Make(source string) string {
-	var result strings.Builder
+	var stringAccum strings.Builder
+	var result string
 	var prevChar rune
-	formattedSource := strings.TrimSpace(strings.ToLower(source))
+
+	formattedSource := removeExtension(strings.TrimSpace(strings.ToLower(source)))
+	regExp, _ := regexp.Compile("[a-z]")
 
 	for _, el := range formattedSource {
-		trans, ok := alphabet[el]
-		regExp, _ := regexp.Compile("[a-z]")
-		match := regExp.MatchString(string(el))
+		transformedLetter, isInAlphabet := alphabet[el]
+		isLatin := regExp.MatchString(string(el))
+		isDigit := unicode.IsDigit(el)
 
-		if el == ' ' {
-			if prevChar != '-' {
-				result.WriteRune('-')
+		if isSeparator(el) {
+			if prevChar != '-' && prevChar != 0 {
+				stringAccum.WriteRune('-')
 			}
 			prevChar = '-'
 		}
 
-		if ok {
-			result.WriteString(trans)
-			prevChar = rune(trans[len(trans)-1])
+		if isInAlphabet {
+			stringAccum.WriteString(transformedLetter)
+			prevChar = rune(transformedLetter[len(transformedLetter)-1])
 		}
 
-		if unicode.IsDigit(el) || match {
-			result.WriteRune(el)
+		if isDigit || isLatin {
+			stringAccum.WriteRune(el)
 			prevChar = el
 		}
 
 	}
 
-	return result.String()
+	result = stringAccum.String()
+
+	if len(result) > 0 && result[len(result)-1] == '-' {
+		result = result[:len(result)-1]
+	}
+
+	return result
+}
+
+func isSeparator(char rune) bool {
+	separators := []rune{' ', '.', '-', '/', '_'}
+
+	return slices.Contains(separators, char)
+}
+
+func removeExtension(fileName string) string {
+	extension := strings.LastIndex(fileName, ".")
+
+	if extension > 0 {
+		return fileName[:extension]
+	}
+
+	return fileName
+
 }
