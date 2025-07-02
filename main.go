@@ -34,15 +34,15 @@ func Make(source string) string {
 
 func MakeWithOptions(inputString string, options Options) string {
 	var stringAccum strings.Builder
-	var prevChar rune
+	var prevChar string
 
 	formattedInputString := formatString(inputString)
 	regExp, _ := regexp.Compile("[a-z]")
 	maxLength := options.MaxLength
-	separator := '-'
+	separator := "-"
 
 	if options.Separator != "" {
-		separator = rune(options.Separator[0])
+		separator = options.Separator
 	}
 
 	for _, el := range formattedInputString {
@@ -52,25 +52,25 @@ func MakeWithOptions(inputString string, options Options) string {
 		isDigit := unicode.IsDigit(el)
 
 		if isSeparator(el) || isReplacement {
-			if prevChar != separator && prevChar != 0 {
-				stringAccum.WriteRune(separator)
+			if prevChar != separator && prevChar != "" {
+				stringAccum.WriteString(separator)
 			}
 			prevChar = separator
 		}
 
 		if isInAlphabet {
 			stringAccum.WriteString(transformedLetter)
-			prevChar = rune(transformedLetter[len(transformedLetter)-1])
+			prevChar = string(transformedLetter[len(transformedLetter)-1])
 		}
 
 		if isDigit || isLatin {
 			stringAccum.WriteRune(el)
-			prevChar = el
+			prevChar = string(el)
 		}
 
 		if isReplacement {
 			stringAccum.WriteString(replacement)
-			prevChar = rune(replacement[len(replacement)-1])
+			prevChar = string(replacement[len(replacement)-1])
 		}
 
 	}
@@ -81,7 +81,7 @@ func MakeWithOptions(inputString string, options Options) string {
 		rawResult = rawResult[:maxLength]
 	}
 
-	if len(rawResult) > 0 && rawResult[len(rawResult)-1] == byte(separator) {
+	if len(rawResult) > 0 && separator != "" && strings.HasSuffix(rawResult, separator) {
 		rawResult = rawResult[:len(rawResult)-1]
 	}
 
