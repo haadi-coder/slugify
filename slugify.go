@@ -1,13 +1,18 @@
-package main
+package slugify
 
 import (
-	"fmt"
 	"regexp"
 	"slices"
 	"strings"
 	"unicode"
 )
 
+// Options - configures the behavior of slug generation.
+//
+// Fields:
+//   - Separator: character(s) used to replace spaces and separators (default: "-")
+//   - MaxLength: maxmium length of the resulting slug, 0 means no limit
+//   - CustomReplacements: map of custom character replacements to apply
 type Options struct {
 	Separator          string
 	MaxLength          int
@@ -23,20 +28,32 @@ var alphabet = map[rune]string{
 	'ш': "sh", 'щ': "shch", 'ы': "y",
 	'э': "e", 'ю': "yu", 'я': "ya"}
 
-func main() {
-	output := MakeWithOptions("C++", Options{CustomReplacements: map[string]string{"+": "plus"}})
-	fmt.Println(output)
-}
-
+// Make - converts a string to a URL-friendly slug using default options.
+// It transliterates Cyrillic characters, replaces separators with hyphens,
+// removes file extensions, and converts to lowercase.
+//
+// Parameters:
+//   - source: the source string to convert
 func Make(source string) string {
 	return MakeWithOptions(source, Options{})
 }
 
-func MakeWithOptions(inputString string, options Options) string {
+// MakeWithOptions - converts a string to a URL-friendly slug with custom options.
+// It processes the input string by transliterating Cyrillic characters to Latin,
+// replacing separators and special characters, and applying length limits.
+//
+// The function preserves Latin letters and digits, transliterates Cyrillic characters
+// using the internal alphabet mapping, applies custom replacements if specified,
+// and ensures no consecutive or trailing separators in the output.
+//
+// Parameters:
+//   - source: the source string to convert
+//   - options: configuration options (separator, max length, custom replacements)
+func MakeWithOptions(source string, options Options) string {
 	var stringAccum strings.Builder
 	var prevChar string
 
-	formattedInputString := formatString(inputString)
+	formattedSource := formatString(source)
 	regExp, _ := regexp.Compile("[a-z]")
 	maxLength := options.MaxLength
 	separator := "-"
@@ -45,7 +62,7 @@ func MakeWithOptions(inputString string, options Options) string {
 		separator = options.Separator
 	}
 
-	for _, el := range formattedInputString {
+	for _, el := range formattedSource {
 		transformedLetter, isInAlphabet := alphabet[el]
 		replacement, isReplacement := options.CustomReplacements[string(el)]
 		isLatin := regExp.MatchString(string(el))
