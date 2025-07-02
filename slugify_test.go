@@ -48,25 +48,25 @@ func TestMake(t *testing.T) {
 
 	for _, tc := range tests {
 		result := Make(tc.input)
-		assert.Equal(t, result, tc.want, tc.name)
+		assert.Equal(t, tc.want, result, tc.name)
 	}
 }
 
 func TestMakeWithOptions(t *testing.T) {
 
 	tests := []TestCasesWithOptions{
-		{"Sanke_case separator", "Hello World!", Options{Separator: "_"}, "hello_world"},
-		{"Dot separator", "Hello World!", Options{Separator: "."}, "hello.world"},
+		{"Sanke_case separator", "Hello World!", Options{Separator: '_'}, "hello_world"},
+		{"Dot separator", "Hello World!", Options{Separator: '.'}, "hello.world"},
 
 		{"Custom maxlength limitation", "Очень длинное название", Options{MaxLength: 10}, "ochen-dlin"},
 
-		{"Custom Replacements_1", "Заказ №123", Options{CustomReplacements: map[string]string{"№": "no"}}, "zakaz-no123"},
-		{"Custom Replacements_2", "Tom & Jerry", Options{CustomReplacements: map[string]string{"&": "and"}}, "tom-and-jerry"},
-		{"Custom Replacements_3", "C++", Options{CustomReplacements: map[string]string{"+": "plus"}}, "c-plus-plus"},
+		{"Custom Replacements_1", "Заказ №123", Options{CustomReplacements: map[rune]string{'№': "no"}}, "zakaz-no123"},
+		{"Custom Replacements_2", "Tom & Jerry", Options{CustomReplacements: map[rune]string{'&': "and"}}, "tom-and-jerry"},
+		{"Custom Replacements_3", "C++", Options{CustomReplacements: map[rune]string{'+': "plus"}}, "c-plus-plus"},
 	}
 
 	for _, tc := range tests {
 		result := MakeWithOptions(tc.input, tc.options)
-		assert.Equal(t, result, tc.want, tc.name)
+		assert.Equal(t, tc.want, result, tc.name)
 	}
 }

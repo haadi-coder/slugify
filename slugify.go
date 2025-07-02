@@ -1,23 +1,25 @@
 package slugify
 
 import (
-	"regexp"
 	"slices"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Options - configures the behavior of slug generation.
 type Options struct {
 	// character(s) used to replace spaces and separators (default: "-")
-	Separator string
+	Separator rune
 
 	// maxmium length of the resulting slug, 0 means no limit
 	MaxLength int
 
 	// map of custom character replacements to apply
-	CustomReplacements map[string]string
+	CustomReplacements map[rune]string
 }
+
+var separators = []rune{' ', '.', '-', '/', '_'}
 
 var alphabet = map[rune]string{
 	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d",
@@ -44,81 +46,87 @@ func Make(source string) string {
 // and ensures no consecutive or trailing separators in the output.
 func MakeWithOptions(source string, options Options) string {
 	var stringAccum strings.Builder
-	var prevChar string
+	var prevChar rune
+	var runeCount int
 
-	formattedSource := formatString(source)
-	regExp, _ := regexp.Compile("[a-z]")
-	maxLength := options.MaxLength
-	separator := "-"
+	preparedSource := prepareString(source)
+	separator := determineSeparator(options.Separator)
 
-	if options.Separator != "" {
-		separator = options.Separator
-	}
+	for _, el := range preparedSource {
 
-	for _, el := range formattedSource {
-		transformedLetter, isInAlphabet := alphabet[el]
-		replacement, isReplacement := options.CustomReplacements[string(el)]
-		isLatin := regExp.MatchString(string(el))
-		isDigit := unicode.IsDigit(el)
+		if options.MaxLength > 0 && runeCount >= options.MaxLength {
+			break
+		}
 
-		if isSeparator(el) || isReplacement {
-			if prevChar != separator && prevChar != "" {
-				stringAccum.WriteString(separator)
+		if isSeparator(el) {
+			if prevChar != separator {
+				stringAccum.WriteRune(separator)
+				runeCount++
 			}
 			prevChar = separator
+			continue
 		}
 
-		if isInAlphabet {
-			stringAccum.WriteString(transformedLetter)
-			prevChar = string(transformedLetter[len(transformedLetter)-1])
-		}
+		if replacement, ok := options.CustomReplacements[el]; ok {
 
-		if isDigit || isLatin {
-			stringAccum.WriteRune(el)
-			prevChar = string(el)
-		}
+			if prevChar != separator {
+				stringAccum.WriteRune(separator)
+				runeCount++
+			}
 
-		if isReplacement {
 			stringAccum.WriteString(replacement)
-			prevChar = string(replacement[len(replacement)-1])
+			prevChar = rune(replacement[len(replacement)-1])
+			runeCount += utf8.RuneCountInString(replacement)
+			continue
+		}
+
+		if transformedLetter, isInAlphabet := alphabet[el]; isInAlphabet {
+			stringAccum.WriteString(transformedLetter)
+			prevChar = rune(transformedLetter[len(transformedLetter)-1])
+			runeCount += utf8.RuneCountInString(transformedLetter)
+			continue
+		}
+
+		if unicode.IsDigit(el) || unicode.Is(unicode.Latin, el) {
+			stringAccum.WriteRune(el)
+			prevChar = el
+			runeCount++
+			continue
 		}
 
 	}
 
-	rawResult := stringAccum.String()
+	return stringAccum.String()
 
-	if maxLength > 0 && maxLength < len(rawResult) {
-		rawResult = rawResult[:maxLength]
-	}
-
-	if len(rawResult) > 0 && separator != "" && strings.HasSuffix(rawResult, separator) {
-		rawResult = rawResult[:len(rawResult)-1]
-	}
-
-	return rawResult
 }
 
 func isSeparator(char rune) bool {
-	separators := []rune{' ', '.', '-', '/', '_'}
-
 	return slices.Contains(separators, char)
 }
 
-func removeExtension(fileName string) string {
-	extension := strings.LastIndex(fileName, ".")
+func determineSeparator(separator rune) rune {
 
-	if extension > 0 {
-		return fileName[:extension]
+	if separator != 0 {
+		return separator
+	}
+
+	return '-'
+}
+
+func removeSuffix(fileName string) string {
+	suffix := strings.LastIndex(fileName, ".")
+
+	if suffix > 0 {
+		return fileName[:suffix]
 	}
 
 	return fileName
-
 }
 
-func formatString(inputString string) string {
+func prepareString(inputString string) string {
 	lowered := strings.ToLower(inputString)
-	trimmed := strings.TrimSpace(lowered)
-	result := removeExtension(trimmed)
+	trimmed := strings.Trim(lowered, string(separators))
+	result := removeSuffix(trimmed)
 
 	return result
 }
