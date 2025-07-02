@@ -8,14 +8,14 @@ import (
 )
 
 // Options - configures the behavior of slug generation.
-//
-// Fields:
-//   - Separator: character(s) used to replace spaces and separators (default: "-")
-//   - MaxLength: maxmium length of the resulting slug, 0 means no limit
-//   - CustomReplacements: map of custom character replacements to apply
 type Options struct {
-	Separator          string
-	MaxLength          int
+	// character(s) used to replace spaces and separators (default: "-")
+	Separator string
+
+	// maxmium length of the resulting slug, 0 means no limit
+	MaxLength int
+
+	// map of custom character replacements to apply
 	CustomReplacements map[string]string
 }
 
@@ -31,9 +31,6 @@ var alphabet = map[rune]string{
 // Make - converts a string to a URL-friendly slug using default options.
 // It transliterates Cyrillic characters, replaces separators with hyphens,
 // removes file extensions, and converts to lowercase.
-//
-// Parameters:
-//   - source: the source string to convert
 func Make(source string) string {
 	return MakeWithOptions(source, Options{})
 }
@@ -45,10 +42,6 @@ func Make(source string) string {
 // The function preserves Latin letters and digits, transliterates Cyrillic characters
 // using the internal alphabet mapping, applies custom replacements if specified,
 // and ensures no consecutive or trailing separators in the output.
-//
-// Parameters:
-//   - source: the source string to convert
-//   - options: configuration options (separator, max length, custom replacements)
 func MakeWithOptions(source string, options Options) string {
 	var stringAccum strings.Builder
 	var prevChar string
