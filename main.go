@@ -8,7 +8,14 @@ import (
 	"unicode"
 )
 
-var alphabet = map[rune]string{'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d",
+type Options struct {
+	Separator          string
+	MaxLength          int
+	CustomReplacements map[string]string
+}
+
+var alphabet = map[rune]string{
+	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d",
 	'е': "e", 'ё': "yo", 'ж': "zh", 'з': "z", 'и': "i",
 	'й': "y", 'к': "k", 'л': "l", 'м': "m", 'н': "n",
 	'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t",
@@ -17,28 +24,38 @@ var alphabet = map[rune]string{'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д':
 	'э': "e", 'ю': "yu", 'я': "ya"}
 
 func main() {
-	output := Make("---Hello World---")
+	output := MakeWithOptions("C++", Options{CustomReplacements: map[string]string{"+": "plus"}})
 	fmt.Println(output)
 }
 
 func Make(source string) string {
+	return MakeWithOptions(source, Options{})
+}
+
+func MakeWithOptions(inputString string, options Options) string {
 	var stringAccum strings.Builder
-	var result string
 	var prevChar rune
 
-	formattedSource := removeExtension(strings.TrimSpace(strings.ToLower(source)))
+	formattedInputString := formatString(inputString)
 	regExp, _ := regexp.Compile("[a-z]")
+	maxLength := options.MaxLength
+	separator := '-'
 
-	for _, el := range formattedSource {
+	if options.Separator != "" {
+		separator = rune(options.Separator[0])
+	}
+
+	for _, el := range formattedInputString {
 		transformedLetter, isInAlphabet := alphabet[el]
+		replacement, isReplacement := options.CustomReplacements[string(el)]
 		isLatin := regExp.MatchString(string(el))
 		isDigit := unicode.IsDigit(el)
 
-		if isSeparator(el) {
-			if prevChar != '-' && prevChar != 0 {
-				stringAccum.WriteRune('-')
+		if isSeparator(el) || isReplacement {
+			if prevChar != separator && prevChar != 0 {
+				stringAccum.WriteRune(separator)
 			}
-			prevChar = '-'
+			prevChar = separator
 		}
 
 		if isInAlphabet {
@@ -51,15 +68,24 @@ func Make(source string) string {
 			prevChar = el
 		}
 
+		if isReplacement {
+			stringAccum.WriteString(replacement)
+			prevChar = rune(replacement[len(replacement)-1])
+		}
+
 	}
 
-	result = stringAccum.String()
+	rawResult := stringAccum.String()
 
-	if len(result) > 0 && result[len(result)-1] == '-' {
-		result = result[:len(result)-1]
+	if maxLength > 0 && maxLength < len(rawResult) {
+		rawResult = rawResult[:maxLength]
 	}
 
-	return result
+	if len(rawResult) > 0 && rawResult[len(rawResult)-1] == byte(separator) {
+		rawResult = rawResult[:len(rawResult)-1]
+	}
+
+	return rawResult
 }
 
 func isSeparator(char rune) bool {
@@ -77,4 +103,12 @@ func removeExtension(fileName string) string {
 
 	return fileName
 
+}
+
+func formatString(inputString string) string {
+	lowered := strings.ToLower(inputString)
+	trimmed := strings.TrimSpace(lowered)
+	result := removeExtension(trimmed)
+
+	return result
 }
