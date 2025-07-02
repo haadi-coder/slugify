@@ -8,6 +8,13 @@ type TestCases struct {
 	want  string
 }
 
+type TestCasesWithOptions struct {
+	name    string
+	input   string
+	options Options
+	want    string
+}
+
 func TestMake(t *testing.T) {
 	tests := []TestCases{
 		{"Latin letters", "Hello world", "hello-world"},
@@ -23,8 +30,8 @@ func TestMake(t *testing.T) {
 		{"Deleting separators from start and end", "---Hello World---", "hello-world"},
 
 		{"Cyrillic letters", "Москва", "moskva"},
-		{"Cyrillic letters with compound vowels", "Ёлка", "yolka"},
-		{"Cyrillic letters with compound vowels", "Щётка", "shchyotka"},
+		{"Cyrillic letters with compound vowels_1", "Ёлка", "yolka"},
+		{"Cyrillic letters with compound vowels_2", "Щётка", "shchyotka"},
 		{"With soft sign))", "семья", "semya"},
 		{"With solid sign))", "объект", "obekt"},
 
@@ -38,6 +45,30 @@ func TestMake(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Make(tc.input)
+
+			if result != tc.want {
+				t.Errorf("Result was incorrect, got: %s, want: %s.", result, tc.want)
+			}
+		})
+	}
+}
+
+func TestMakeWithOptions(t *testing.T) {
+
+	tests := []TestCasesWithOptions{
+		{"Sanke_case separator", "Hello World!", Options{Separator: "_"}, "hello_world"},
+		{"Dot separator", "Hello World!", Options{Separator: "."}, "hello.world"},
+
+		{"Custom maxlength limitation", "Очень длинное название", Options{MaxLength: 10}, "ochen-dlin"},
+
+		{"Custom Replacements_1", "Заказ №123", Options{CustomReplacements: map[string]string{"№": "no"}}, "zakaz-no123"},
+		{"Custom Replacements_2", "Tom & Jerry", Options{CustomReplacements: map[string]string{"&": "and"}}, "tom-and-jerry"},
+		{"Custom Replacements_3", "C++", Options{CustomReplacements: map[string]string{"+": "plus"}}, "c-plus-plus"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := MakeWithOptions(tc.input, tc.options)
 
 			if result != tc.want {
 				t.Errorf("Result was incorrect, got: %s, want: %s.", result, tc.want)
