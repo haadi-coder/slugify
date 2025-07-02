@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 type TestCases struct {
 	name  string
@@ -43,13 +47,8 @@ func TestMake(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := Make(tc.input)
-
-			if result != tc.want {
-				t.Errorf("Result was incorrect, got: %s, want: %s.", result, tc.want)
-			}
-		})
+		result := Make(tc.input)
+		assert.Equal(t, result, tc.want, tc.name)
 	}
 }
 
@@ -67,12 +66,7 @@ func TestMakeWithOptions(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := MakeWithOptions(tc.input, tc.options)
-
-			if result != tc.want {
-				t.Errorf("Result was incorrect, got: %s, want: %s.", result, tc.want)
-			}
-		})
+		result := MakeWithOptions(tc.input, tc.options)
+		assert.Equal(t, result, tc.want, tc.name)
 	}
 }
