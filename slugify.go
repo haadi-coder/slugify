@@ -9,17 +9,17 @@ import (
 
 // Options - configures the behavior of slug generation.
 type Options struct {
-	// character(s) used to replace spaces and separators (default: "-")
+	// Seperator character(s) used to replace spaces and separators (default: "-")
 	Separator rune
 
-	// maxmium length of the resulting slug, 0 means no limit
+	// Maxlength maxmium length of the resulting slug, 0 means no limit
 	MaxLength int
 
-	// map of custom character replacements to apply
+	// CustomReplacements map of custom character replacements to apply
 	CustomReplacements map[rune]string
 }
 
-var separators = []rune{' ', '.', '-', '/', '_'}
+var separators = []string{" ", ".", "-", "/", "_"}
 
 var alphabet = map[rune]string{
 	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d",
@@ -33,8 +33,8 @@ var alphabet = map[rune]string{
 // Make - converts a string to a URL-friendly slug using default options.
 // It transliterates Cyrillic characters, replaces separators with hyphens,
 // removes file extensions, and converts to lowercase.
-func Make(source string) string {
-	return MakeWithOptions(source, Options{})
+func Make(s string) string {
+	return MakeWithOptions(s, Options{})
 }
 
 // MakeWithOptions - converts a string to a URL-friendly slug with custom options.
@@ -44,64 +44,64 @@ func Make(source string) string {
 // The function preserves Latin letters and digits, transliterates Cyrillic characters
 // using the internal alphabet mapping, applies custom replacements if specified,
 // and ensures no consecutive or trailing separators in the output.
-func MakeWithOptions(source string, options Options) string {
-	var stringAccum strings.Builder
+func MakeWithOptions(s string, opts Options) string {
+	var sb strings.Builder
 	var prevChar rune
 	var runeCount int
 
-	preparedSource := prepareString(source)
-	separator := determineSeparator(options.Separator)
+	prepared := prepareString(s)
+	separator := determineSeparator(opts.Separator)
 
-	for _, el := range preparedSource {
+	for _, r := range prepared {
 
-		if options.MaxLength > 0 && runeCount >= options.MaxLength {
+		if opts.MaxLength > 0 && runeCount >= opts.MaxLength {
 			break
 		}
 
-		if isSeparator(el) {
+		if isSeparator(r) {
 			if prevChar != separator {
-				stringAccum.WriteRune(separator)
+				sb.WriteRune(separator)
 				runeCount++
 			}
 			prevChar = separator
 			continue
 		}
 
-		if replacement, ok := options.CustomReplacements[el]; ok {
+		if replacement, ok := opts.CustomReplacements[r]; ok {
 
 			if prevChar != separator {
-				stringAccum.WriteRune(separator)
+				sb.WriteRune(separator)
 				runeCount++
 			}
 
-			stringAccum.WriteString(replacement)
+			sb.WriteString(replacement)
 			prevChar = rune(replacement[len(replacement)-1])
 			runeCount += utf8.RuneCountInString(replacement)
 			continue
 		}
 
-		if transformedLetter, isInAlphabet := alphabet[el]; isInAlphabet {
-			stringAccum.WriteString(transformedLetter)
-			prevChar = rune(transformedLetter[len(transformedLetter)-1])
-			runeCount += utf8.RuneCountInString(transformedLetter)
+		if replacement, ok := alphabet[r]; ok {
+			sb.WriteString(replacement)
+			prevChar = rune(replacement[len(replacement)-1])
+			runeCount += utf8.RuneCountInString(replacement)
 			continue
 		}
 
-		if unicode.IsDigit(el) || unicode.Is(unicode.Latin, el) {
-			stringAccum.WriteRune(el)
-			prevChar = el
+		if unicode.IsDigit(r) || unicode.Is(unicode.Latin, r) {
+			sb.WriteRune(r)
+			prevChar = r
 			runeCount++
 			continue
 		}
 
 	}
 
-	return stringAccum.String()
+	return sb.String()
 
 }
 
 func isSeparator(char rune) bool {
-	return slices.Contains(separators, char)
+	return slices.Contains(separators, string(char))
 }
 
 func determineSeparator(separator rune) rune {
@@ -113,20 +113,9 @@ func determineSeparator(separator rune) rune {
 	return '-'
 }
 
-func removeSuffix(fileName string) string {
-	suffix := strings.LastIndex(fileName, ".")
-
-	if suffix > 0 {
-		return fileName[:suffix]
-	}
-
-	return fileName
-}
-
 func prepareString(inputString string) string {
 	lowered := strings.ToLower(inputString)
-	trimmed := strings.Trim(lowered, string(separators))
-	result := removeSuffix(trimmed)
+	trimmed := strings.Trim(lowered, strings.Join(separators, ""))
 
-	return result
+	return trimmed
 }

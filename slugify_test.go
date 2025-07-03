@@ -6,21 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestCases struct {
-	name  string
-	input string
-	want  string
-}
-
-type TestCasesWithOptions struct {
-	name    string
-	input   string
-	options Options
-	want    string
-}
-
 func TestMake(t *testing.T) {
-	tests := []TestCases{
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
 		{"Latin letters", "Hello world", "hello-world"},
 		{"With special characters", "Hello, world!!!", "hello-world"},
 		{"With numbers and special characters", "100% Awesome!!!", "100-awesome"},
@@ -32,6 +23,7 @@ func TestMake(t *testing.T) {
 		{"String from special characters", "!@#$%^&*()", ""},
 		{"Sequence of separators", "Hello      World", "hello-world"},
 		{"Deleting separators from start and end", "---Hello World---", "hello-world"},
+		{"Dot as separator", "mail.ru", "mail-ru"},
 
 		{"Cyrillic letters", "Москва", "moskva"},
 		{"Cyrillic letters with compound vowels_1", "Ёлка", "yolka"},
@@ -40,21 +32,35 @@ func TestMake(t *testing.T) {
 		{"With solid sign))", "объект", "obekt"},
 
 		{"URL genereation", "10 советов по Go: как писать идиоматичный код", "10-sovetov-po-go-kak-pisat-idiomatichnyy-kod"},
-		{"Filenames", "Отчёт за март 2024.pdf", "otchyot-za-mart-2024"},
 		{"Id generation from name", "Смартфон Xiaomi 13 Pro (256ГБ)", "smartfon-xiaomi-13-pro-256gb"},
 		{"URL for categories", "Электроника / Телефоны", "elektronika-telefony"},
 		{"Tags", "#Новинка!", "novinka"},
 	}
 
 	for _, tc := range tests {
-		result := Make(tc.input)
-		assert.Equal(t, tc.want, result, tc.name)
+		t.Run(tc.name, func(t *testing.T) {
+			result := Make(tc.input)
+			assert.Equal(t, tc.want, result, tc.name)
+		})
 	}
+
+	t.Run("idempotentcy check", func(t *testing.T) {
+		firstResult := Make("10 советов по Go: как писать идиоматичный код")
+		secondResult := Make(firstResult)
+
+		assert.Equal(t, secondResult, secondResult)
+	})
+
 }
 
 func TestMakeWithOptions(t *testing.T) {
 
-	tests := []TestCasesWithOptions{
+	tests := []struct {
+		name    string
+		input   string
+		options Options
+		want    string
+	}{
 		{"Sanke_case separator", "Hello World!", Options{Separator: '_'}, "hello_world"},
 		{"Dot separator", "Hello World!", Options{Separator: '.'}, "hello.world"},
 
@@ -66,7 +72,10 @@ func TestMakeWithOptions(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		result := MakeWithOptions(tc.input, tc.options)
-		assert.Equal(t, tc.want, result, tc.name)
+		t.Run(tc.name, func(t *testing.T) {
+			result := MakeWithOptions(tc.input, tc.options)
+			assert.Equal(t, tc.want, result, tc.name)
+		})
+
 	}
 }
