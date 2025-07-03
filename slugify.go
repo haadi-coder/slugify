@@ -7,18 +7,6 @@ import (
 	"unicode/utf8"
 )
 
-// Options - configures the behavior of slug generation.
-type Options struct {
-	// Seperator character(s) used to replace spaces and separators (default: "-")
-	Separator string
-
-	// Maxlength maxmium length of the resulting slug, 0 means no limit
-	MaxLength int
-
-	// CustomReplacements map of custom character replacements to apply
-	CustomReplacements map[rune]string
-}
-
 var specChars = []rune{' ', '.', '-', '/', '_'}
 
 var alphabet = map[rune]string{
@@ -29,6 +17,18 @@ var alphabet = map[rune]string{
 	'у': "u", 'ф': "f", 'х': "h", 'ц': "ts", 'ч': "ch",
 	'ш': "sh", 'щ': "shch", 'ы': "y",
 	'э': "e", 'ю': "yu", 'я': "ya"}
+
+// Options configures the behavior of slug generation.
+type Options struct {
+	// Seperator character(s) used to replace spaces and separators (default: "-")
+	Separator string
+
+	// Maxlength maxmium length of the resulting slug, 0 means no limit
+	MaxLength int
+
+	// CustomReplacements map of custom character replacements to apply
+	CustomReplacements map[rune]string
+}
 
 // Make - converts a string to a URL-friendly slug using default options.
 // It transliterates Cyrillic characters, replaces separators with hyphens,
@@ -49,7 +49,7 @@ func MakeWithOptions(s string, opts Options) string {
 	var prevChar string
 	var runeCount int
 
-	prepared := prepareString(s)
+	prepared := prepare(s)
 	separator := determineSeparator(opts.Separator)
 
 	for _, r := range prepared {
@@ -62,12 +62,12 @@ func MakeWithOptions(s string, opts Options) string {
 				sb.WriteString(separator)
 				runeCount++
 			}
+
 			prevChar = separator
 			continue
 		}
 
 		if replacement, ok := opts.CustomReplacements[r]; ok {
-
 			if prevChar != separator {
 				sb.WriteString(separator)
 				runeCount++
@@ -97,22 +97,21 @@ func MakeWithOptions(s string, opts Options) string {
 	return sb.String()
 }
 
+func prepare(s string) string {
+	lowered := strings.ToLower(s)
+	trimmed := strings.TrimFunc(lowered, isSeparator)
+
+	return trimmed
+}
+
 func isSeparator(char rune) bool {
 	return slices.Contains(specChars, char)
 }
 
 func determineSeparator(separator string) string {
-
 	if separator != "" {
 		return separator
 	}
 
 	return "-"
-}
-
-func prepareString(inputString string) string {
-	lowered := strings.ToLower(inputString)
-	trimmed := strings.Trim(lowered, string(specChars))
-
-	return trimmed
 }
