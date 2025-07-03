@@ -120,11 +120,9 @@ func TestMake(t *testing.T) {
 			assert.Equal(t, tc.want, result)
 		})
 	}
-
 }
 
 func TestMakeWithOptions(t *testing.T) {
-
 	tests := []struct {
 		name  string
 		input string
