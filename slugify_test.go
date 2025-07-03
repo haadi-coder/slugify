@@ -12,44 +12,37 @@ func TestMake(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"Latin letters", "Hello world", "hello-world"},
-		{"With special characters", "Hello, world!!!", "hello-world"},
-		{"With numbers and special characters", "100% Awesome!!!", "100-awesome"},
-		{"In camelCase style", "CamelCase", "camelcase"},
-		{"In kebab-case style", "Linux-is-good", "linux-is-good"},
+		{name: "Latin letters", input: "Hello world", want: "hello-world"},
+		{name: "With special characters", input: "Hello, world!!!", want: "hello-world"},
+		{name: "With numbers and special characters", input: "100% Awesome!!!", want: "100-awesome"},
+		{name: "In camelCase style", input: "CamelCase", want: "camelcase"},
+		{name: "In kebab-case style", input: "Linux-is-good", want: "linux-is-good"},
 
-		{"Empty string", "", ""},
-		{"String from spaces", "    ", ""},
-		{"String from special characters", "!@#$%^&*()", ""},
-		{"Sequence of separators", "Hello      World", "hello-world"},
-		{"Deleting separators from start and end", "---Hello World---", "hello-world"},
-		{"Dot as separator", "mail.ru", "mail-ru"},
+		{name: "Empty string", input: "", want: ""},
+		{name: "String from spaces", input: "    ", want: ""},
+		{name: "String from special characters", input: "!@#$%^&*()", want: ""},
+		{name: "Sequence of separators", input: "Hello      World", want: "hello-world"},
+		{name: "Deleting separators from start and end", input: "---Hello World---", want: "hello-world"},
+		{name: "Dot as separator", input: "mail.ru", want: "mail-ru"},
 
-		{"Cyrillic letters", "Москва", "moskva"},
-		{"Cyrillic letters with compound vowels_1", "Ёлка", "yolka"},
-		{"Cyrillic letters with compound vowels_2", "Щётка", "shchyotka"},
-		{"With soft sign))", "семья", "semya"},
-		{"With solid sign))", "объект", "obekt"},
+		{name: "Cyrillic letters", input: "Москва", want: "moskva"},
+		{name: "Cyrillic letters with compound vowels_1", input: "Ёлка", want: "yolka"},
+		{name: "Cyrillic letters with compound vowels_2", input: "Щётка", want: "shchyotka"},
+		{name: "With soft sign))", input: "семья", want: "semya"},
+		{name: "With solid sign))", input: "объект", want: "obekt"},
 
-		{"URL genereation", "10 советов по Go: как писать идиоматичный код", "10-sovetov-po-go-kak-pisat-idiomatichnyy-kod"},
-		{"Id generation from name", "Смартфон Xiaomi 13 Pro (256ГБ)", "smartfon-xiaomi-13-pro-256gb"},
-		{"URL for categories", "Электроника / Телефоны", "elektronika-telefony"},
-		{"Tags", "#Новинка!", "novinka"},
+		{name: "URL genereation", input: "10 советов по Go: как писать идиоматичный код", want: "10-sovetov-po-go-kak-pisat-idiomatichnyy-kod"},
+		{name: "Id generation from name", input: "Смартфон Xiaomi 13 Pro (256ГБ)", want: "smartfon-xiaomi-13-pro-256gb"},
+		{name: "URL for categories", input: "Электроника / Телефоны", want: "elektronika-telefony"},
+		{name: "Tags", input: "#Новинка!", want: "novinka"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			result := Make(tc.input)
-			assert.Equal(t, tc.want, result, tc.name)
+			assert.Equal(t, tc.want, result)
 		})
 	}
-
-	t.Run("idempotentcy check", func(t *testing.T) {
-		firstResult := Make("10 советов по Go: как писать идиоматичный код")
-		secondResult := Make(firstResult)
-
-		assert.Equal(t, secondResult, secondResult)
-	})
 
 }
 
@@ -61,21 +54,30 @@ func TestMakeWithOptions(t *testing.T) {
 		options Options
 		want    string
 	}{
-		{"Sanke_case separator", "Hello World!", Options{Separator: '_'}, "hello_world"},
-		{"Dot separator", "Hello World!", Options{Separator: '.'}, "hello.world"},
+		{name: "Sanke_case separator", input: "Hello World!", options: Options{Separator: "_"}, want: "hello_world"},
+		{name: "Dot separator", input: "Hello World!", options: Options{Separator: "."}, want: "hello.world"},
 
-		{"Custom maxlength limitation", "Очень длинное название", Options{MaxLength: 10}, "ochen-dlin"},
+		{name: "Custom maxlength limitation", input: "Очень длинное название", options: Options{MaxLength: 10}, want: "ochen-dlin"},
 
-		{"Custom Replacements_1", "Заказ №123", Options{CustomReplacements: map[rune]string{'№': "no"}}, "zakaz-no123"},
-		{"Custom Replacements_2", "Tom & Jerry", Options{CustomReplacements: map[rune]string{'&': "and"}}, "tom-and-jerry"},
-		{"Custom Replacements_3", "C++", Options{CustomReplacements: map[rune]string{'+': "plus"}}, "c-plus-plus"},
+		{name: "Custom Replacements_1", input: "Заказ №123", options: Options{CustomReplacements: map[rune]string{'№': "no"}}, want: "zakaz-no123"},
+		{name: "Custom Replacements_2", input: "Tom & Jerry", options: Options{CustomReplacements: map[rune]string{'&': "and"}}, want: "tom-and-jerry"},
+		{name: "Custom Replacements_3", input: "C++", options: Options{CustomReplacements: map[rune]string{'+': "plus"}}, want: "c-plus-plus"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			result := MakeWithOptions(tc.input, tc.options)
-			assert.Equal(t, tc.want, result, tc.name)
+			assert.Equal(t, tc.want, result)
 		})
 
 	}
+}
+
+func TestIdempotency(t *testing.T) {
+	t.Run("idempotentcy check", func(t *testing.T) {
+		firstResult := Make("10 советов по Go: как писать идиоматичный код")
+		secondResult := Make(firstResult)
+
+		assert.Equal(t, secondResult, secondResult)
+	})
 }

@@ -10,7 +10,7 @@ import (
 // Options - configures the behavior of slug generation.
 type Options struct {
 	// Seperator character(s) used to replace spaces and separators (default: "-")
-	Separator rune
+	Separator string
 
 	// Maxlength maxmium length of the resulting slug, 0 means no limit
 	MaxLength int
@@ -19,7 +19,7 @@ type Options struct {
 	CustomReplacements map[rune]string
 }
 
-var separators = []string{" ", ".", "-", "/", "_"}
+var specChars = []rune{' ', '.', '-', '/', '_'}
 
 var alphabet = map[rune]string{
 	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d",
@@ -46,21 +46,20 @@ func Make(s string) string {
 // and ensures no consecutive or trailing separators in the output.
 func MakeWithOptions(s string, opts Options) string {
 	var sb strings.Builder
-	var prevChar rune
+	var prevChar string
 	var runeCount int
 
 	prepared := prepareString(s)
 	separator := determineSeparator(opts.Separator)
 
 	for _, r := range prepared {
-
 		if opts.MaxLength > 0 && runeCount >= opts.MaxLength {
 			break
 		}
 
 		if isSeparator(r) {
 			if prevChar != separator {
-				sb.WriteRune(separator)
+				sb.WriteString(separator)
 				runeCount++
 			}
 			prevChar = separator
@@ -70,52 +69,50 @@ func MakeWithOptions(s string, opts Options) string {
 		if replacement, ok := opts.CustomReplacements[r]; ok {
 
 			if prevChar != separator {
-				sb.WriteRune(separator)
+				sb.WriteString(separator)
 				runeCount++
 			}
 
 			sb.WriteString(replacement)
-			prevChar = rune(replacement[len(replacement)-1])
+			prevChar = string(replacement[len(replacement)-1])
 			runeCount += utf8.RuneCountInString(replacement)
 			continue
 		}
 
 		if replacement, ok := alphabet[r]; ok {
 			sb.WriteString(replacement)
-			prevChar = rune(replacement[len(replacement)-1])
+			prevChar = string(replacement[len(replacement)-1])
 			runeCount += utf8.RuneCountInString(replacement)
 			continue
 		}
 
 		if unicode.IsDigit(r) || unicode.Is(unicode.Latin, r) {
 			sb.WriteRune(r)
-			prevChar = r
+			prevChar = string(r)
 			runeCount++
 			continue
 		}
-
 	}
 
 	return sb.String()
-
 }
 
 func isSeparator(char rune) bool {
-	return slices.Contains(separators, string(char))
+	return slices.Contains(specChars, char)
 }
 
-func determineSeparator(separator rune) rune {
+func determineSeparator(separator string) string {
 
-	if separator != 0 {
+	if separator != "" {
 		return separator
 	}
 
-	return '-'
+	return "-"
 }
 
 func prepareString(inputString string) string {
 	lowered := strings.ToLower(inputString)
-	trimmed := strings.Trim(lowered, strings.Join(separators, ""))
+	trimmed := strings.Trim(lowered, string(specChars))
 
 	return trimmed
 }
