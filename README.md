@@ -14,7 +14,7 @@ A lightweight Go package for converting strings into URL-friendly slugs with Cyr
 ## Installation
 
 ```bash
-go get github.com/abdugaffor2004/slugify
+go get github.com/haadi-coder/slugify
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ package main
 
 import (
     "fmt"
-    "github.com/abdugaffor2004/slugify"
+    "github.com/haadi-coder/slugify"
 )
 
 func main() {
