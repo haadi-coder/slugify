@@ -1,4 +1,4 @@
-module github.com/haadi-coder/Slugify
+module github.com/haadi-coder/slugify
 
 go 1.24.4
 
